@@ -114,7 +114,7 @@ def write_sh(in_prefix, all_prefix, nodes, tasks_per_node, mem, time):
         f.write(f'#SBATCH --output="{all_prefix}.out"\n')
         f.write('#SBATCH --partition=compute\n')
         f.write('#SBATCH --constraint="lustre"\n')
-        f.write(f'#SBATCH --nodes={nodes}"\n')
+        f.write(f'#SBATCH --nodes={nodes}\n')
         f.write(f'#SBATCH --ntasks-per-node={tasks_per_node}\n')
         f.write(f'#SBATCH --mem={mem}G\n')
         f.write('#SBATCH --account="ucb312"\n')
