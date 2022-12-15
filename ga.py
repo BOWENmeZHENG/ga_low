@@ -65,3 +65,7 @@ for file in files:
     if file.endswith('.data') or file.endswith('.in') or file.endswith('.sh'):
         shutil.move(file, f'{folder}/{file}')
 shutil.copyfile('CH.airebo', f'{folder}/CH.airebo')
+
+
+# upload files to supercomputer
+os.system(f"scp -r {folder}/ bwzheng@login.expanse.sdsc.edu:/expanse/lustre/scratch/bwzheng/temp_project/")
