@@ -10,7 +10,7 @@ def write_files(num_total_real, coors_flakes_all, coors_inclusions, L_box, seed,
 def write_data(num_total_real, coors_flakes_all, coors_inclusions, L_box, seed, mass_inc=1.0):
     num_C_atoms, num_inc = len(coors_flakes_all), len(coors_inclusions)
     data_prefix = f'f_{num_total_real}_i_{num_inc}_s_{seed}'
-    with open(f'{data_prefix}.data', 'w') as f:
+    with open(f'data.{data_prefix}', 'w') as f:
         f.write('# \n')
         f.write('\n')
         f.write(f'{num_C_atoms + num_inc} atoms\n')
@@ -41,17 +41,17 @@ def write_in(data_prefix, sigma, num_cycle, ts, Tdrag=1, Pdrag=0.5):
     temperature = 3000.0
     in_prefix = f'sgm_{sigma}_c_{num_cycle}_t_{ts}'
     all_prefix = f'{data_prefix}_{in_prefix}'
-    with open(f'{in_prefix}.in', 'w') as f:
+    with open(f'in.{in_prefix}', 'w') as f:
         f.write('# \n')
         f.write('\n')
         f.write('units 		metal\n')
         f.write('timestep	0.5e-3\n')
         f.write('dimension 	3\n')
         f.write('boundary 	p p p\n')
-        f.write(f'log 	{all_prefix}.log\n')
+        f.write(f'log 	log.{all_prefix}\n')
         f.write('\n')
         f.write('atom_style full\n')
-        f.write(f'read_data 	{data_prefix}.data\n')
+        f.write(f'read_data 	data.{data_prefix}\n')
         f.write('group carbon type 1\n')
         f.write('group inclusions type 2\n')
         f.write('\n')
@@ -105,14 +105,14 @@ def write_in(data_prefix, sigma, num_cycle, ts, Tdrag=1, Pdrag=0.5):
         # f.write(f'fix		1 all npt temp 300.0 300.0 {Tdrag:.3f} iso 1 1000 {Pdrag:.3f}\n')
         # f.write('minimize 1.0e-4 1.0e-6 100 1000\n')
         # f.write(f'run    {ts}\n')
-        f.write(f'write_data {all_prefix}.data\n')
+        f.write(f'write_data data.{all_prefix}\n')
     return in_prefix, all_prefix
 
 def write_sh(in_prefix, all_prefix, nodes, tasks_per_node, mem, time):
-    with open(f'{all_prefix}.sh', 'w') as f:
+    with open(f'sh.{all_prefix}', 'w') as f:
         f.write('#!/bin/bash\n')
         f.write(f'#SBATCH --job-name="{all_prefix}"\n')
-        f.write(f'#SBATCH --output="{all_prefix}.out"\n')
+        f.write(f'#SBATCH --output="out.{all_prefix}"\n')
         f.write('#SBATCH --partition=compute\n')
         f.write('#SBATCH --constraint="lustre"\n')
         f.write(f'#SBATCH --nodes={nodes}\n')
@@ -127,6 +127,6 @@ def write_sh(in_prefix, all_prefix, nodes, tasks_per_node, mem, time):
         f.write('module load   openmpi/4.0.4\n')
         f.write('module load   lammps/20200721-openblas\n')
         f.write('\n')
-        f.write(f'srun lmp -in {in_prefix}.in\n')
+        f.write(f'srun lmp -in in.{in_prefix}\n')
 
 

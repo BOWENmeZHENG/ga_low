@@ -62,7 +62,7 @@ folder = '_' + all_prefix
 os.makedirs(folder, exist_ok=True)
 files = os.listdir('./')
 for file in files:
-    if file.endswith('.data') or file.endswith('.in') or file.endswith('.sh'):
+    if file.startswith('data.') or file.startswith('in.') or file.startswith('sh.'):
         shutil.move(file, f'{folder}/{file}')
 shutil.copyfile('CH.airebo', f'{folder}/CH.airebo')
 
