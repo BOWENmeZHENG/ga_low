@@ -1,6 +1,9 @@
-def write_files(num_total_real, coors_flakes_all, coors_inclusions, L_box, seed, sigma, num_cycle, ts):
+def write_files(num_total_real, coors_flakes_all, coors_inclusions, L_box, seed,
+                sigma, num_cycle, ts,
+                nodes, tasks_per_node, mem, time):
     data_prefix = write_data(num_total_real, coors_flakes_all, coors_inclusions, L_box, seed)
     in_prefix, all_prefix = write_in(data_prefix, sigma, num_cycle, ts)
+    write_sh(in_prefix, all_prefix, nodes, tasks_per_node, mem, time)
     return data_prefix, in_prefix, all_prefix
 
 
@@ -104,6 +107,25 @@ def write_in(data_prefix, sigma, num_cycle, ts, Tdrag=1, Pdrag=0.5):
         f.write(f'write_data {all_prefix}.data\n')
     return in_prefix, all_prefix
 
-
+def write_sh(in_prefix, all_prefix, nodes, tasks_per_node, mem, time):
+    with open(f'{all_prefix}.sh', 'w') as f:
+        f.write('#!/bin/bash\n')
+        f.write(f'#SBATCH --job-name="{all_prefix}"\n')
+        f.write(f'#SBATCH --output="{all_prefix}.out"\n')
+        f.write('#SBATCH --partition=compute\n')
+        f.write('#SBATCH --constraint="lustre"\n')
+        f.write(f'#SBATCH --nodes={nodes}"\n')
+        f.write(f'#SBATCH --ntasks-per-node={tasks_per_node}\n')
+        f.write(f'#SBATCH --mem={mem}G\n')
+        f.write('#SBATCH --account="ucb312"\n')
+        f.write('#SBATCH --export=ALL\n')
+        f.write(f'#SBATCH -t {time}:00:00\n')
+        f.write('\n')
+        f.write('module load   slurm\n')
+        f.write('module load   gcc/10.2.0\n')
+        f.write('module load   openmpi/4.0.4\n')
+        f.write('module load   lammps/20200721-openblas\n')
+        f.write('\n')
+        f.write(f'srun lmp -in {in_prefix}.in\n')
 
 

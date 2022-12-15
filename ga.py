@@ -4,16 +4,18 @@ import os, shutil
 import utils, write
 
 MASS_C = 12.01e-3 / 6.0221e23  # kg
+DENSITY_INITIAL = 1  # kg/m3
 
-
-seed = 11
 num_total = 400
 num_inc = 2000
-density_initial = 1  # kg/m3
+seed = 11
 sigma = 14
 num_cycle = 8
 ts = 50000
-
+nodes = 8
+tasks_per_node = 32
+mem = 16
+time = 10
 
 np.random.seed(seed)
 
@@ -24,7 +26,7 @@ num_total_real = sum(num_flakes)
 C_num_atoms = np.inner(C_num_flakes, num_flakes)
 
 Total_mass_C = C_num_atoms * MASS_C
-volume_initial = Total_mass_C / density_initial * 1e30  # A3
+volume_initial = Total_mass_C / DENSITY_INITIAL * 1e30  # A3
 L_box = volume_initial**(1/3)  # A
 
 
@@ -53,11 +55,13 @@ coors_flakes_all = np.vstack(coors_flakes_all)
 # utils.plot_3D(coors_flakes_all, coors_inclusions)
 
 
-data_prefix, in_prefix, all_prefix = write.write_files(num_total_real, coors_flakes_all, coors_inclusions, L_box, seed, sigma, num_cycle, ts)
+data_prefix, in_prefix, all_prefix = write.write_files(num_total_real, coors_flakes_all, coors_inclusions, L_box, seed,
+                                                       sigma, num_cycle, ts,
+                                                       nodes, tasks_per_node, mem, time)
 folder = '_' + all_prefix
 os.makedirs(folder, exist_ok=True)
 files = os.listdir('./')
 for file in files:
-    if file.startswith(data_prefix) or file.startswith(in_prefix):
+    if file.endswith('.data') or file.endswith('.in') or file.endswith('.sh'):
         shutil.move(file, f'{folder}/{file}')
 shutil.copyfile('CH.airebo', f'{folder}/CH.airebo')
