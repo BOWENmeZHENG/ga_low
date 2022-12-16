@@ -12,6 +12,7 @@ seed = 11
 sigma = 14
 num_cycle = 8
 ts = 100000
+anneal_temp = 5000
 nodes = 8
 tasks_per_node = 32
 mem = 16
@@ -56,7 +57,7 @@ coors_flakes_all = np.vstack(coors_flakes_all)
 
 
 data_prefix, in_prefix, all_prefix = write.write_files(num_total_real, coors_flakes_all, coors_inclusions, L_box, seed,
-                                                       sigma, num_cycle, ts,
+                                                       sigma, num_cycle, ts, anneal_temp,
                                                        nodes, tasks_per_node, mem, time)
 folder = '_' + all_prefix
 os.makedirs(folder, exist_ok=True)

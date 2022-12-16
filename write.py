@@ -1,8 +1,8 @@
 def write_files(num_total_real, coors_flakes_all, coors_inclusions, L_box, seed,
-                sigma, num_cycle, ts,
+                sigma, num_cycle, ts, anneal_temp,
                 nodes, tasks_per_node, mem, time):
     data_prefix = write_data(num_total_real, coors_flakes_all, coors_inclusions, L_box, seed)
-    in_prefix, all_prefix = write_in(data_prefix, sigma, num_cycle, ts)
+    in_prefix, all_prefix = write_in(data_prefix, sigma, num_cycle, ts, anneal_temp)
     write_sh(in_prefix, all_prefix, nodes, tasks_per_node, mem, time)
     return data_prefix, in_prefix, all_prefix
 
@@ -37,9 +37,8 @@ def write_data(num_total_real, coors_flakes_all, coors_inclusions, L_box, seed, 
         return data_prefix
 
 
-def write_in(data_prefix, sigma, num_cycle, ts, Tdrag=1, Pdrag=0.5):
-    temperature = 3000.0
-    in_prefix = f'sgm_{sigma}_c_{num_cycle}_t_{ts}'
+def write_in(data_prefix, sigma, num_cycle, ts, anneal_temp, Tdrag=1, Pdrag=0.5):
+    in_prefix = f'sgm_{sigma}_c_{num_cycle}_t_{ts}_at_{anneal_temp}'
     all_prefix = f'{data_prefix}_{in_prefix}'
     with open(f'in.{in_prefix}', 'w') as f:
         f.write('# \n')
@@ -75,13 +74,13 @@ def write_in(data_prefix, sigma, num_cycle, ts, Tdrag=1, Pdrag=0.5):
         f.write('minimize 1.0e-4 1.0e-6 100 1000\n')
         f.write(f'run    {ts}\n')
         f.write('unfix 1\n')
-        f.write(f'fix		1 all nvt temp 300.0 {temperature} {Tdrag:.3f}\n')
+        f.write(f'fix		1 all nvt temp 300.0 {anneal_temp} {Tdrag:.3f}\n')
         f.write(f'run    {ts}\n')
         f.write('unfix 1\n')
-        f.write(f'fix		1 all nvt temp {temperature} {temperature} {Tdrag:.3f}\n')
+        f.write(f'fix		1 all nvt temp {anneal_temp} {anneal_temp} {Tdrag:.3f}\n')
         f.write(f'run    {ts}\n')
         f.write('unfix 1\n')
-        f.write(f'fix		1 all nvt temp {temperature} 300.0 {Tdrag:.3f}\n')
+        f.write(f'fix		1 all nvt temp {anneal_temp} 300.0 {Tdrag:.3f}\n')
         f.write(f'run    {ts}\n')
         f.write('\n')
         for i in range(num_cycle - 1):
@@ -91,13 +90,13 @@ def write_in(data_prefix, sigma, num_cycle, ts, Tdrag=1, Pdrag=0.5):
             f.write('minimize 1.0e-4 1.0e-6 100 1000\n')
             f.write(f'run    {ts}\n')
             f.write('unfix 1\n')
-            f.write(f'fix		1 all nvt temp 300.0 {temperature} {Tdrag:.3f}\n')
+            f.write(f'fix		1 all nvt temp 300.0 {anneal_temp} {Tdrag:.3f}\n')
             f.write(f'run    {ts}\n')
             f.write('unfix 1\n')
-            f.write(f'fix		1 all nvt temp {temperature} {temperature} {Tdrag:.3f}\n')
+            f.write(f'fix		1 all nvt temp {anneal_temp} {anneal_temp} {Tdrag:.3f}\n')
             f.write(f'run    {ts}\n')
             f.write('unfix 1\n')
-            f.write(f'fix		1 all nvt temp {temperature} 300.0 {Tdrag:.3f}\n')
+            f.write(f'fix		1 all nvt temp {anneal_temp} 300.0 {Tdrag:.3f}\n')
             f.write(f'run    {ts}\n')
             f.write('\n')
         f.write('delete_atoms group inclusions\n')
