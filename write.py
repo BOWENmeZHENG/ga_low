@@ -1,15 +1,16 @@
-def write_files(num_total_real, coors_flakes_all, coors_inclusions, L_box, seed,
+def write_files(num_total_real, coors_flakes_all, coors_inclusions, L_box, mass_inc, seed,
                 sigma, num_cycle, ts, anneal_temp,
                 nodes, tasks_per_node, mem, time):
-    data_prefix = write_data(num_total_real, coors_flakes_all, coors_inclusions, L_box, seed)
+    data_prefix = write_data(num_total_real, coors_flakes_all, coors_inclusions, L_box, mass_inc, seed)
     in_prefix, all_prefix = write_in(data_prefix, sigma, num_cycle, ts, anneal_temp)
     write_sh(in_prefix, all_prefix, nodes, tasks_per_node, mem, time)
+    write_tension(all_prefix)
     return data_prefix, in_prefix, all_prefix
 
 
-def write_data(num_total_real, coors_flakes_all, coors_inclusions, L_box, seed, mass_inc=1.0):
+def write_data(num_total_real, coors_flakes_all, coors_inclusions, L_box, mass_inc, seed):
     num_C_atoms, num_inc = len(coors_flakes_all), len(coors_inclusions)
-    data_prefix = f'f_{num_total_real}_i_{num_inc}_s_{seed}'
+    data_prefix = f'f_{num_total_real}_i_{num_inc}_mi_{mass_inc}_s_{seed}'
     with open(f'data.{data_prefix}', 'w') as f:
         f.write('# \n')
         f.write('\n')
@@ -100,12 +101,56 @@ def write_in(data_prefix, sigma, num_cycle, ts, anneal_temp, Tdrag=1, Pdrag=0.5)
             f.write(f'run    {ts}\n')
             f.write('\n')
         f.write('delete_atoms group inclusions\n')
-        # f.write('unfix 1\n')
-        # f.write(f'fix		1 all npt temp 300.0 300.0 {Tdrag:.3f} iso 1 1000 {Pdrag:.3f}\n')
-        # f.write('minimize 1.0e-4 1.0e-6 100 1000\n')
-        # f.write(f'run    {ts}\n')
         f.write(f'write_data data.{all_prefix}\n')
     return in_prefix, all_prefix
+
+
+def write_tension(all_prefix):
+    with open(f'in.tension', 'w') as f:
+        f.write('# \n')
+        f.write('\n')
+        f.write('units 		metal\n')
+        f.write('timestep	0.5e-3\n')
+        f.write('dimension 	3\n')
+        f.write('boundary 	p p p\n')
+        f.write(f'log 	log.tension\n')
+        f.write('\n')
+        f.write('atom_style full\n')
+        f.write(f'read_data 	data.{all_prefix}\n')
+        f.write('\n')
+        f.write('pair_style 	airebo 3\n')
+        f.write('pair_coeff	* * CH.airebo C C\n')
+        f.write('\n')
+        f.write('compute 	PE all pe\n')
+        f.write('compute 	STRESSATOM all stress/atom NULL pair\n')
+        f.write('compute 	STRESSTEMP1 all reduce sum c_STRESSATOM[*]\n')
+        f.write('\n')
+        f.write('variable 	STRESSTEMP2 equal 1e-25*c_STRESSTEMP1[1]\n')
+        f.write('variable 	VOLUME equal vol*1e-30\n')
+        f.write('variable 	STRESS equal v_STRESSTEMP2/v_VOLUME*1e-9 # Unit: GPa\n')
+        f.write('variable 	LENGTHX equal lx\n')
+        f.write('variable 	STRAINRATE equal 0.05\n')
+        f.write('variable 	INCREMENT equal 0.01/v_STRAINRATE/0.5e-3\n')
+        f.write('variable 	PRINTTIME equal v_INCREMENT+1000\n')
+        f.write('\n')
+        f.write('velocity 	all create 300 2 mom yes rot yes dist gaussian\n')
+        f.write('dump       	TRJ all custom ${PRINTTIME} tension.lammpstrj id type x y z\n')
+        f.write('thermo 		${PRINTTIME}\n')
+        f.write('thermo_style    custom step temp press vol density lx ly lz xlo xhi v_STRESS\n')
+        f.write('fix 		PRINT all print ${PRINTTIME} "${LENGTHX}   ${STRESS}" file tension.txt\n')
+        f.write('\n')
+        f.write('variable 	n loop 100\n')
+        f.write('  label 	here\n')
+        f.write('  fix		NPT all npt temp 300.0 300.0 1.000 y 1 1 1 z 1 1 1\n')
+        f.write('  fix 		DEFORM all deform 1 x trate ${STRAINRATE}\n')
+        f.write('  run 		${INCREMENT}\n')
+        f.write('  unfix 	NPT\n')
+        f.write('  minimize 	1.0e-4 1.0e-6 100 1000\n')
+        f.write('  fix		NVT all nvt temp 300.0 300.0 1.000\n')
+        f.write('  run 		500\n')
+        f.write('  unfix 	NVT\n')
+        f.write('  next 		n\n')
+        f.write('  jump 		SELF here\n')
 
 def write_sh(in_prefix, all_prefix, nodes, tasks_per_node, mem, time):
     with open(f'sh.{all_prefix}', 'w') as f:
@@ -127,5 +172,6 @@ def write_sh(in_prefix, all_prefix, nodes, tasks_per_node, mem, time):
         f.write('module load   lammps/20200721-openblas\n')
         f.write('\n')
         f.write(f'srun lmp -in in.{in_prefix}\n')
+        f.write(f'srun lmp -in in.tension\n')
 
 
