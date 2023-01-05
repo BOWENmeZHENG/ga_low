@@ -1,8 +1,8 @@
 def write_files(num_total_real, coors_flakes_all, coors_inclusions, L_box, mass_inc, seed,
-                sigma, num_cycle, ts, anneal_temp,
+                sigma, cut, num_cycle, ts, anneal_temp,
                 nodes, tasks_per_node, mem, time):
     data_prefix = write_data(num_total_real, coors_flakes_all, coors_inclusions, L_box, mass_inc, seed)
-    in_prefix, all_prefix = write_in(data_prefix, sigma, num_cycle, ts, anneal_temp)
+    in_prefix, all_prefix = write_in(data_prefix, sigma, cut, num_cycle, ts, anneal_temp)
     write_sh(in_prefix, all_prefix, nodes, tasks_per_node, mem, time)
     write_tension(all_prefix)
     return data_prefix, in_prefix, all_prefix
@@ -38,8 +38,8 @@ def write_data(num_total_real, coors_flakes_all, coors_inclusions, L_box, mass_i
         return data_prefix
 
 
-def write_in(data_prefix, sigma, num_cycle, ts, anneal_temp, Tdrag=1, Pdrag=0.5):
-    in_prefix = f'sgm_{sigma}_c_{num_cycle}_t_{ts}_at_{anneal_temp}'
+def write_in(data_prefix, sigma, cut, num_cycle, ts, anneal_temp, Tdrag=1, Pdrag=0.5):
+    in_prefix = f'sgm_{sigma}_cut_{cut}_c_{num_cycle}_t_{ts}_at_{anneal_temp}'
     all_prefix = f'{data_prefix}_{in_prefix}'
     with open(f'in.{in_prefix}', 'w') as f:
         f.write('# \n')
@@ -55,7 +55,7 @@ def write_in(data_prefix, sigma, num_cycle, ts, anneal_temp, Tdrag=1, Pdrag=0.5)
         f.write('group carbon type 1\n')
         f.write('group inclusions type 2\n')
         f.write('\n')
-        f.write(f'pair_style hybrid airebo 3 lj/cut {sigma + 3} \n')
+        f.write(f'pair_style hybrid airebo 3 lj/cut {cut} \n')
         f.write('pair_coeff	* * airebo CH.airebo C H\n')
         f.write(f'pair_coeff	1 2 lj/cut 0.652 {sigma}\n')
         f.write(f'pair_coeff	2 2 lj/cut 0.652 {sigma}\n')
@@ -69,8 +69,8 @@ def write_in(data_prefix, sigma, num_cycle, ts, anneal_temp, Tdrag=1, Pdrag=0.5)
         f.write('\n')
         f.write('velocity 	all create 300 3 mom yes rot yes dist gaussian\n')
         f.write(f'fix		1 all npt temp 300.0 300.0 {Tdrag:.3f} iso 1 1000 {Pdrag:.3f}\n')
-        f.write(f'dump       1 all custom 2000 {all_prefix}.lammpstrj id type x y z c_1[*]\n')
-        f.write('thermo 		200\n')
+        f.write(f'dump       1 all custom 10000 {all_prefix}.lammpstrj id type x y z c_1[*]\n')
+        f.write('thermo 		500\n')
         f.write('thermo_style    custom step temp press pe vol density lx ly lz xlo xhi v_stress\n')
         f.write('minimize 1.0e-4 1.0e-6 100 1000\n')
         f.write(f'run    {ts}\n')

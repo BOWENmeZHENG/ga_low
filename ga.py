@@ -7,17 +7,18 @@ MASS_C = 12.01e-3 / 6.0221e23  # kg
 DENSITY_INITIAL = 1  # kg/m3
 
 num_total = 400
-num_inc = 2500
+num_inc = 700
 mass_inc = 1.0
 seed = 11
-sigma = 14
-num_cycle = 12
+sigma = 15
+cut = 21
+num_cycle = 10
 ts = 100000
 anneal_temp = 4000
-nodes = 8
+nodes = 16
 tasks_per_node = 32
 mem = 16
-time = 10
+time = 5
 
 np.random.seed(seed)
 
@@ -58,7 +59,7 @@ coors_flakes_all = np.vstack(coors_flakes_all)
 
 
 data_prefix, in_prefix, all_prefix = write.write_files(num_total_real, coors_flakes_all, coors_inclusions, L_box, mass_inc, seed,
-                                                       sigma, num_cycle, ts, anneal_temp,
+                                                       sigma, cut, num_cycle, ts, anneal_temp,
                                                        nodes, tasks_per_node, mem, time)
 folder = '_' + all_prefix
 os.makedirs(folder, exist_ok=True)
@@ -71,3 +72,8 @@ shutil.copyfile('CH.airebo', f'{folder}/CH.airebo')
 
 # upload files to supercomputer
 os.system(f"scp -r {folder}/ bwzheng@login.expanse.sdsc.edu:/expanse/lustre/scratch/bwzheng/temp_project/")
+
+# Automatically run
+# os.system("ssh bwzheng@login.expanse.sdsc.edu")
+# os.system(f"cd /expanse/lustre/scratch/$USER/temp_project")  # /{folder}
+# os.system(f"sbatch sh.{all_prefix}")
